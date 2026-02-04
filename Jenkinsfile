@@ -1,34 +1,31 @@
 pipeline {
     agent any
-
+    options {
+        skipStagesAfterUnstable()
+    }
     stages {
-
-        stage('Verify Python') {
-            steps {
-                bat 'where python'
-                bat 'python --version'
-            }
-        }
-
         stage('Build') {
             steps {
-                bat 'python -m py_compile sources\\add2vals.py sources\\calc.py'
+                sh 'python3 -m py_compile sources/add2vals.py sources/calc.py'
             }
         }
-
         stage('Test') {
             steps {
-                bat 'pytest --verbose sources\\test_calc.py'
+                sh 'py.test --verbose --junit-xml test-reports/results.xml sources/test_calc.py'
+            }
+            post {
+                always {
+                    junit 'test-reports/results.xml'
+                }
             }
         }
-
         stage('Deliver') {
             steps {
-                bat 'pyinstaller --onefile sources\\add2vals.py'
+                sh 'pyinstaller --onefile sources/add2vals.py'
             }
             post {
                 success {
-                    archiveArtifacts 'dist\\*.exe'
+                    archiveArtifacts 'dist/add2vals'
                 }
             }
         }
